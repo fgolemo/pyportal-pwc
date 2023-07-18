@@ -9,6 +9,9 @@ ignore_events=[
     "spep",
 ]
 
+days_in_month = [31,28,31,30,31,30,31,31,30,31,30,31]
+
+
 class GoogleEvents(displayio.Group):
     def __init__(self, calendar_id, display, fonts, requests):
         super().__init__()
@@ -138,7 +141,7 @@ class GoogleEvents(displayio.Group):
         time_min = self.get_current_time(False)
         time_max = self.get_current_time(time_max=True)
         print("Fetching calendar events from {0} to {1}".format(time_min, time_max))
-
+        # print ("token", self.google_auth.access_token)
         headers = {
             "Authorization": "Bearer " + self.google_auth.access_token,
             "Accept": "application/json",
@@ -149,6 +152,7 @@ class GoogleEvents(displayio.Group):
             "/events?maxResults={1}&timeMin={2}&timeMax={3}&orderBy=startTime"
             "&singleEvents=true".format(calendar_id, self.max_events, time_min, time_max)
         )
+        # print ("fetching..", url)
         resp = self.requests.get(url, headers=headers)
         resp_json = resp.json()
         if "error" in resp_json:
@@ -168,11 +172,22 @@ class GoogleEvents(displayio.Group):
         # Format as RFC339 timestamp
         cur_time = time.localtime()
         if time_max:  # maximum time to fetch events is midnight (4:59:59UTC)
+            day_in_two_days = cur_time[2] + 2
+            this_month = cur_time[1]
+            # print ("this month", this_month)
+            # print ("day_in_two_days", day_in_two_days)
+            leap_year = (cur_time[0] % 4) == 0
+            if leap_year:
+                days_in_month[1] = 29
+            if day_in_two_days > days_in_month[this_month-1]:
+               day_in_two_days = day_in_two_days - days_in_month[this_month-1]
+               this_month += 1
+
             cur_time_max = time.struct_time(
                 (
                     cur_time[0],
-                    cur_time[1],
-                    cur_time[2] + 2, # 2 days ahead instead of one, i.e. tomrrow midnight instead of today midnight
+                    this_month,
+                    day_in_two_days, # 2 days ahead instead of one, i.e. tomrrow midnight instead of today midnight
                     4,
                     59,
                     59,
@@ -217,6 +232,13 @@ class GoogleEvents(displayio.Group):
         self.event_1_time.text = ""
         self.event_1_diff.text = ""
 
+    def event_sanity_check(self, e):
+        if "summary" not in e or "end" not in e or "start" not in e:
+            return False
+        if "dateTime" not in e["end"] or "dateTime" not in e["start"]:
+            return False
+        return True
+
     def display_events(self):
         cursor = 0
         placed_events = 0
@@ -225,7 +247,15 @@ class GoogleEvents(displayio.Group):
             if cursor == len(self.events):
                 break
             
+
             event = self.events[cursor]
+            event_valid = self.event_sanity_check(event)
+            if not event_valid:
+                print ("skipping event")
+                cursor += 1
+                continue
+
+
             event_name = event["summary"][:15]
             ignore = False
             for name in ignore_events:

@@ -59,7 +59,7 @@ fonts = Fonts(cwd)
 gfx = openweather_graphics.OpenWeather_Graphics(pyportal.splash, adt=adt, fonts=fonts, am_pm=False, celsius=True)
 gce = GoogleEvents(CALENDAR_ID, pyportal.splash, fonts, pyportal.network.requests)
 ts = pyportal.touchscreen
-pom = Pomodoro(pyportal.touchscreen, pyportal.splash, fonts, pyportal.play_file)
+pom = Pomodoro(pyportal.touchscreen, pyportal.splash, fonts, pyportal.play_file, pyportal.network._wifi.neopix)
 
 def set_backlight(val):
     """Adjust the TFT backlight.
@@ -109,7 +109,7 @@ while True:
             gfx.loading_time_msg()
             pyportal.get_local_time()
             localtile_refresh = time.monotonic()
-        except RuntimeError as e:
+        except Exception as e:
             print("Some error occured in time, retrying! -", e)
             continue
 
@@ -121,7 +121,7 @@ while True:
             print("Response is", value)
             gfx.display_weather(value)
             weather_refresh = time.monotonic()
-        except RuntimeError as e:
+        except Exception as e:
             print("Some error occured in weather, retrying! -", e)
             continue
 
@@ -132,7 +132,7 @@ while True:
             gce.get_calendar_events()
             print (gce.events)
             cal_refresh = time.monotonic()
-        except RuntimeError as e:
+        except Exception as e:
             print("Some error occured in cal, retrying! -", e)
             continue
 
@@ -179,7 +179,7 @@ while True:
 # # DisplayIO Setup
 # # Set up fonts
 # font_small = bitmap_font.load_font("/fonts/Arial-12.bdf")
-# font_large = bitmap_font.load_font("/fonts/Arial-16.bdf")
+# font_large = bitmap_font.load_font("/fonts/Roboto-Medium-21.bdf")
 # # preload fonts
 # glyphs = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-,.: "
 # font_small.load_glyphs(glyphs)
@@ -244,7 +244,7 @@ while True:
 
 # # print formatted keys for adding to secrets.py
 # print("Add the following lines to your secrets.py file:")
-# print("\t"google_access_token' " + ":" + " '%s'," % google_auth.access_token)
+# print("\t'google_access_token' " + ":" + " '%s'," % google_auth.access_token)
 # print("\t'google_refresh_token' " + ":" + " '%s'" % google_auth.refresh_token)
 # # Remove QR code and code/verification labels
 # graphics.splash.pop()

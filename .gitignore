@@ -137,3 +137,4 @@ secrets.py
 .fseventsd/
 System Volume Information/
 fonts/.*
+.*.py

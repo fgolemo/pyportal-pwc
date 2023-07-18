@@ -7,7 +7,7 @@ cwd = ("/"+__file__).rsplit('/', 1)[0]
 chime = cwd+"/chime1.wav"
 
 class Pomodoro(displayio.Group):
-    def __init__(self, touchscreen, display, fonts, player):
+    def __init__(self, touchscreen, display, fonts, player, neopix):
         super().__init__()
         self.display = display # pyportal.splash
         self.ts = touchscreen
@@ -17,7 +17,8 @@ class Pomodoro(displayio.Group):
         self.timer = None
         self.player = player
 
-        display.append(self)
+        display.append(self) # this is the group, not the display itself
+        self.display = display
         self._text_group = displayio.Group()
         self.append(self._text_group)
 
@@ -29,9 +30,14 @@ class Pomodoro(displayio.Group):
         self._text_group.append(self.timer_txt)
 
         self.btn_right = False
-        self.btn_right_time = time.monotonic()
+        # self.btn_right_time = time.monotonic()
         self.btn_left = False
-        self.btn_left_time = time.monotonic()
+        # self.btn_left_time = time.monotonic()
+        self.btn_btm = False
+        self.screen_on = True
+
+        self.neopix = neopix
+
         
     def tick(self):
         # step the timer and display the results if new
@@ -85,6 +91,11 @@ class Pomodoro(displayio.Group):
         self.timer_sec = 0
         self.redraw()
 
+    def btn_btm_func(self):
+        print ("toggling screen")        
+        self.display.hidden = not self.display.hidden
+        self.neopix.brightness = float(not self.display.hidden)
+
     def check_touch(self):
         touch = self.ts.touch_point
         if touch:
@@ -114,8 +125,18 @@ class Pomodoro(displayio.Group):
                     self.btn_right_func()
             else:
                 self.btn_right = False
+
+            if touch[0] <= 160 and touch[1] >= 130:
+                if self.btn_btm:
+                    pass    
+                else:
+                    self.btn_btm = True
+                    self.btn_btm_func()
+            else:
+                self.btn_btm = False
         else:
-            if self.btn_left or self.btn_right:
+            if self.btn_left or self.btn_right or self.btn_btm:
                 self.btn_left = False
                 self.btn_right = False
+                self.btn_btm = False
 
